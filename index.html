@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wilec S.A. - Caja Pro (Corregido)</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        :root { --bg: #0f172a; --card: #1e293b; --accent: #38bdf8; --text: #f8fafc; --green: #10b981; --red: #f43f5e; --orange: #fb923c; --gold: #fbbf24; --purple: #a78bfa; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); padding: 10px; }
+        
+        .dash-caja { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+        .caja-full { grid-column: 1 / 4; background: linear-gradient(135deg, #1e293b, #0f172a); border: 1px solid var(--gold) !important; padding: 14px; text-align: center; }
+        
+        .caja-card { background: var(--card); padding: 10px 6px; border-radius: 14px; border: 1px solid #334155; text-align: center; }
+        .caja-card small { font-size: 9px; opacity: 0.8; text-transform: uppercase; display: block; margin-bottom: 4px; font-weight: bold; }
+        .caja-card b { font-size: 15px; color: var(--green); }
+        
+        .main-card { background: var(--card); padding: 15px; border-radius: 20px; border: 1px solid #334155; margin-bottom: 15px; }
+        label { display: block; font-size: 10px; color: var(--accent); margin-top: 8px; font-weight: bold; text-transform: uppercase; }
+        input, select, button { width: 100%; padding: 12px; margin-top: 4px; border-radius: 12px; border: 1px solid #334155; background: #0f172a; color: white; font-size: 14px; outline: none; }
+        
+        .btn-ing { background: var(--green); color: #000; font-weight: 800; border: none; margin-top: 12px; cursor: pointer; }
+        .btn-egr { background: var(--red); color: #fff; font-weight: 800; border: none; display: none; margin-top: 12px; cursor: pointer; }
+        .btn-cierre { background: var(--orange); color: #000; font-weight: 800; border: none; margin-top: 8px; cursor: pointer; }
+        
+        .tabla-contenedor { background: var(--card); border-radius: 15px; border: 1px solid #334155; margin-top: 10px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 10px; }
+        th { background: #334155; padding: 9px 6px; color: var(--accent); text-align: left; }
+        td { padding: 9px 6px; border-bottom: 1px solid #334155; }
+        
+        .m-ingreso { color: var(--green); font-weight: bold; }
+        .m-egreso { color: var(--red); font-weight: bold; }
+        .badge-bolsillo { padding: 2px 6px; border-radius: 6px; font-size: 9px; font-weight: bold; background: #0f172a; border: 1px solid #475569; }
+        
+        #toast { visibility: hidden; min-width: 200px; background: #334155; color: #fff; text-align: center; border-radius: 10px; padding: 12px; position: fixed; left: 50%; bottom: 30px; transform: translateX(-50%); border: 1px solid var(--accent); z-index: 10; }
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+    </style>
+</head>
+<body>
+    <div id="toast">✅ Operación realizada</div>
+    
+    <div class="dash-caja">
+        <div class="caja-card caja-full">
+            <small>💰 CAPITAL TOTAL ACUMULADO (3 BOLSILLOS)</small>
+            <b id="m-total-historico" style="color:var(--gold); font-size: 24px;">$0.00</b>
+        </div>
+        
+        <div class="caja-card" style="border-bottom: 2px solid var(--green);">
+            <small>📱 Taller</small>
+            <b id="m-taller" style="color:var(--green)">$0.00</b>
+        </div>
+        <div class="caja-card" style="border-bottom: 2px solid var(--accent);">
+            <small>🛻 Camioneta</small>
+            <b id="m-camioneta" style="color:var(--accent)">$0.00</b>
+        </div>
+        <div class="caja-card" style="border-bottom: 2px solid var(--purple);">
+            <small>👤 Personal</small>
+            <b id="m-personal" style="color:var(--purple)">$0.00</b>
+        </div>
+    </div>
+
+    <div class="main-card">
+        <label>Acción</label>
+        <select id="tipo_mov" onchange="cambiarBoton()">
+            <option value="INGRESO">➕ RECIBIR DINERO</option>
+            <option value="EGRESO">➖ PAGAR / GASTAR</option>
+        </select>
+        
+        <div style="display:flex; gap:10px;">
+            <div style="flex:1.2">
+                <label>Bolsillo</label>
+                <select id="metodo">
+                    <option value="Taller">Taller</option>
+                    <option value="Camioneta">Camioneta</option>
+                    <option value="Personal">Personal</option>
+                </select>
+            </div>
+            <div style="flex:1">
+                <label>Monto ($)</label>
+                <input type="number" id="valor" placeholder="0.00" step="0.01" inputmode="decimal">
+            </div>
+        </div>
+
+        <div style="display:flex; gap:10px;">
+            <div style="flex:1">
+                <label>Forma de Pago</label>
+                <select id="forma_pago">
+                    <option value="Efectivo">💵 Efectivo</option>
+                    <option value="Transferencia">🏦 Transferencia</option>
+                </select>
+            </div>
+            <div style="flex:1.5">
+                <label>Detalle</label>
+                <input type="text" id="desc" placeholder="Ej: Agua, comida...">
+            </div>
+        </div>
+
+        <button id="btn-ingreso" class="btn-ing" onclick="registrar('INGRESO')">CONFIRMAR INGRESO</button>
+        <button id="btn-egreso" class="btn-egr" onclick="registrar('EGRESO')">CONFIRMAR GASTO</button>
+        <button class="btn-cierre" onclick="ejecutarCierre()">📊 CERRAR CAJA (REPORTE)</button>
+    </div>
+
+    <p style="margin-left: 5px; font-size: 11px; font-weight: bold; color: var(--accent);">📝 MOVIMIENTOS DE HOY</p>
+    <div class="tabla-contenedor">
+        <table>
+            <thead>
+                <tr>
+                    <th>FECHA</th>
+                    <th>BOLSILLO</th>
+                    <th>DETALLE</th>
+                    <th>VALOR</th>
+                </tr>
+            </thead>
+            <tbody id="lista-mov"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const URL_GAS = 'https://script.google.com/macros/s/AKfycbyjG1HVsbJHAjm0tKLYkmjJHf1r1rryqSVhNgAxjda1g9odnRyjKBylhopqT_CtD-0w/exec'; 
+
+        function showToast(msg) {
+            const t = document.getElementById("toast");
+            t.innerText = msg; t.className = "show";
+            setTimeout(() => { t.className = t.className.replace("show", ""); }, 3000);
+        }
+
+        function cambiarBoton() {
+            const t = document.getElementById('tipo_mov').value;
+            document.getElementById('btn-ingreso').style.display = (t === 'INGRESO') ? 'block' : 'none';
+            document.getElementById('btn-egreso').style.display = (t === 'EGRESO') ? 'block' : 'none';
+        }
+
+        async function sincronizarPendientes() {
+            let pendientes = JSON.parse(localStorage.getItem('wilec_pendientes') || '[]');
+            if (pendientes.length === 0) return;
+            let nuevosPendientes = [];
+            for (let item of pendientes) {
+                try {
+                    const fData = new URLSearchParams();
+                    for(let key in item) fData.append(key, item[key]);
+                    const response = await fetch(URL_GAS, { method: 'POST', body: fData });
+                    if(await response.text() !== "SUCCESS") nuevosPendientes.push(item);
+                } catch(e) { nuevosPendientes.push(item); }
+            }
+            localStorage.setItem('wilec_pendientes', JSON.stringify(nuevosPendientes));
+        }
+
+        async function registrar(tipo) {
+            const btn = (tipo === 'INGRESO') ? document.getElementById('btn-ingreso') : document.getElementById('btn-egreso');
+            const monto = document.getElementById('valor').value;
+            if(!monto || monto <= 0) return alert("⚠️ Ingrese monto.");
+            
+            btn.innerText = "⌛ GUARDANDO..."; btn.disabled = true;
+            
+            const bolsillo = document.getElementById('metodo').value; // "Taller", "Camioneta" o "Personal"
+            const forma = document.getElementById('forma_pago').value;
+            const detalleTexto = document.getElementById('desc').value || "Varios";
+            const descFinal = `${detalleTexto} (${forma})`;
+
+            const d = { 
+                tipo: tipo, 
+                metodo: bolsillo, 
+                desc: descFinal, 
+                valor: monto 
+            };
+
+            if (!navigator.onLine) {
+                let pendientes = JSON.parse(localStorage.getItem('wilec_pendientes') || '[]');
+                pendientes.push(d);
+                localStorage.setItem('wilec_pendientes', JSON.stringify(pendientes));
+                showToast("💾 Sin internet: Guardado local");
+                limpiarFormulario();
+            } else {
+                try {
+                    const fData = new URLSearchParams();
+                    for(let key in d) fData.append(key, d[key]);
+                    const response = await fetch(URL_GAS, { method: 'POST', body: fData });
+                    if(await response.text() === "SUCCESS") {
+                        showToast("✅ Guardado en " + bolsillo);
+                        limpiarFormulario();
+                        sincronizarPendientes();
+                    } else { throw new Error(); }
+                } catch(e) {
+                    let pendientes = JSON.parse(localStorage.getItem('wilec_pendientes') || '[]');
+                    pendientes.push(d);
+                    localStorage.setItem('wilec_pendientes', JSON.stringify(pendientes));
+                    showToast("💾 Error de red: Guardado local");
+                    limpiarFormulario();
+                }
+            }
+            btn.innerText = "CONFIRMAR " + tipo; btn.disabled = false;
+        }
+
+        function limpiarFormulario() {
+            document.getElementById('desc').value = ""; 
+            document.getElementById('valor').value = "";
+            cargarSaldos();
+        }
+
+        async function cargarSaldos() {
+            if (navigator.onLine) await sincronizarPendientes();
+
+            try {
+                const res = await fetch(URL_GAS + "?action=leer_caja&t=" + new Date().getTime());
+                const d = await res.json();
+                
+                let sTaller = 0;
+                let sCamioneta = 0;
+                let sPersonal = 0;
+
+                const tabla = document.getElementById('lista-mov');
+                tabla.innerHTML = "";
+                
+                if(!d.lista || d.lista.length === 0) {
+                    tabla.innerHTML = "<tr><td colspan='4' style='text-align:center; opacity:0.5'>Sin movimientos hoy.</td></tr>";
+                } else {
+                    d.lista.forEach(m => {
+                        const val = parseFloat(m.v) || 0;
+                        const factor = (m.t === 'INGRESO') ? 1 : -1;
+                        
+                        // Leer exactamente el bolsillo que viene de Google Sheets (m.m)
+                        let bols = String(m.m || "").trim();
+                        if (bols !== "Camioneta" && bols !== "Personal") {
+                            bols = "Taller"; // Por defecto si es viejo o vacío
+                        }
+
+                        if(bols === "Taller") sTaller += (val * factor);
+                        else if(bols === "Camioneta") sCamioneta += (val * factor);
+                        else if(bols === "Personal") sPersonal += (val * factor);
+
+                        const tr = document.createElement('tr');
+                        const cl = m.t === 'INGRESO' ? 'm-ingreso' : 'm-egreso';
+                        const signo = m.t === 'INGRESO' ? '+' : '-';
+                        tr.innerHTML = `
+                            <td>${m.f}</td>
+                            <td><span class="badge-bolsillo">${bols}</span></td>
+                            <td>${m.d}</td>
+                            <td class="${cl}">${signo}$${val.toFixed(2)}</td>
+                        `;
+                        tabla.appendChild(tr);
+                    });
+                }
+
+                // Usar los acumulados que vienen del Google Script de forma estricta
+                const finalTaller = (typeof d.taller === 'number') ? d.taller : sTaller;
+                const finalCamioneta = (typeof d.camioneta === 'number') ? d.camioneta : sCamioneta;
+                const finalPersonal = (typeof d.personal === 'number') ? d.personal : sPersonal;
+
+                document.getElementById('m-taller').innerText = "$" + finalTaller.toFixed(2);
+                document.getElementById('m-camioneta').innerText = "$" + finalCamioneta.toFixed(2);
+                document.getElementById('m-personal').innerText = "$" + finalPersonal.toFixed(2);
+
+                const global = d.totalGlobal || (finalTaller + finalCamioneta + finalPersonal);
+                document.getElementById('m-total-historico').innerText = "$" + global.toFixed(2);
+
+                return { ...d, finalTaller, finalCamioneta, finalPersonal, global };
+            } catch(e) { return null; }
+        }
+
+        async function ejecutarCierre() {
+            const d = await cargarSaldos();
+            if(!d) return;
+
+            alert(
+                `🏁 REPORTE DE CIERRE - WILEC S.A.S.\n\n` +
+                `💰 INGRESOS HOY: $${(d.tIngresos || 0).toFixed(2)}\n` +
+                `🔻 GASTOS HOY: $${(d.tEgresos || 0).toFixed(2)}\n` +
+                `---------------------------------\n` +
+                `📱 BOLSILLO TALLER: $${d.finalTaller.toFixed(2)}\n` +
+                `🛻 BOLSILLO CAMIONETA: $${d.finalCamioneta.toFixed(2)}\n` +
+                `👤 BOLSILLO PERSONAL: $${d.finalPersonal.toFixed(2)}\n` +
+                `---------------------------------\n` +
+                `🏆 CAPITAL TOTAL ACUMULADO: $${d.global.toFixed(2)}`
+            );
+            
+            showToast("✨ Reporte generado.");
+        }
+
+        window.addEventListener('online', sincronizarPendientes);
+        cargarSaldos();
+    </script>
+</body>
+</html>
